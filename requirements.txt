@@ -1,0 +1,53 @@
+argh @ file:///home/conda/feedstock_root/build_artifacts/argh_1595627874344/work
+brotlipy==0.7.0
+certifi==2020.12.5
+cffi @ file:///D:/bld/cffi_1613414034267/work
+chardet @ file:///D:/bld/chardet_1610093644405/work
+click==7.1.2
+configparser @ file:///home/conda/feedstock_root/build_artifacts/configparser_1614550305463/work
+cryptography @ file:///D:/bld/cryptography_1616851687511/work
+docker-pycreds==0.4.0
+gitdb @ file:///home/conda/feedstock_root/build_artifacts/gitdb_1616781027402/work
+GitPython @ file:///home/conda/feedstock_root/build_artifacts/gitpython_1619081316745/work
+gql==0.1.0
+graphql-core @ file:///home/conda/feedstock_root/build_artifacts/graphql-core_1617927569613/work
+idna @ file:///home/conda/feedstock_root/build_artifacts/idna_1593328102638/work
+joblib @ file:///tmp/build/80754af9/joblib_1613502643832/work
+mkl-fft==1.3.0
+mkl-random @ file:///C:/ci/mkl_random_1618854593605/work
+mkl-service==2.3.0
+numpy @ file:///C:/ci/numpy_and_numpy_base_1618497408168/work
+nvidia-ml-py3==7.352.0
+olefile==0.46
+pandas @ file:///C:/ci/pandas_1618365631664/work
+pathtools==0.1.2
+Pillow @ file:///C:/ci/pillow_1617386319301/work
+promise @ file:///D:/bld/promise_1610109169568/work
+protobuf==3.15.8
+psutil @ file:///D:/bld/psutil_1610127377789/work
+pycparser @ file:///home/conda/feedstock_root/build_artifacts/pycparser_1593275161868/work
+pyOpenSSL @ file:///home/conda/feedstock_root/build_artifacts/pyopenssl_1608055815057/work
+PySocks @ file:///D:/bld/pysocks_1610291658292/work
+python-dateutil==2.8.1
+pytorch-metric-learning @ file:///home/tkm45/anaconda3/envs/conda_test/conda-bld/pytorch-metric-learning_1617410452142/work
+pytz @ file:///tmp/build/80754af9/pytz_1612215392582/work
+PyYAML==5.4.1
+requests @ file:///home/conda/feedstock_root/build_artifacts/requests_1608156231189/work
+scikit-learn @ file:///C:/ci/scikit-learn_1614446716349/work
+scipy @ file:///C:/ci/scipy_1618856134946/work
+sentry-sdk @ file:///home/conda/feedstock_root/build_artifacts/sentry-sdk_1613665802419/work
+shortuuid @ file:///D:/bld/shortuuid_1610439540396/work
+six @ file:///C:/ci/six_1605205426665/work
+smmap @ file:///home/conda/feedstock_root/build_artifacts/smmap_1611376390914/work
+subprocess32 @ file:///home/conda/feedstock_root/build_artifacts/subprocess32_1598615068906/work
+threadpoolctl @ file:///tmp/tmp9twdgx9k/threadpoolctl-2.1.0-py3-none-any.whl
+torch==1.7.1
+torchaudio==0.7.2
+torchvision==0.8.2
+tqdm @ file:///tmp/build/80754af9/tqdm_1615925068909/work
+typing-extensions @ file:///home/ktietz/src/ci_mi/typing_extensions_1612808209620/work
+urllib3 @ file:///home/conda/feedstock_root/build_artifacts/urllib3_1615828766818/work
+wandb @ file:///home/conda/feedstock_root/build_artifacts/wandb_1614093034584/work
+watchdog @ file:///D:/bld/watchdog_1605984367194/work
+win-inet-pton @ file:///D:/bld/win_inet_pton_1610147627696/work
+wincertstore==0.2

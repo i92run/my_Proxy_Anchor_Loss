@@ -1,0 +1,7 @@
+Best Epoch: 20
+Best Recall@1: 68.7373
+Best Recall@2: 78.3086
+Best Recall@4: 86.0567
+Best Recall@8: 91.3741
+Best Recall@16: 95.3410
+Best Recall@32: 97.4173

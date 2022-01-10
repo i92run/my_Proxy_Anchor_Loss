@@ -1,0 +1,84 @@
+wandb_version: 1
+
+IPC:
+  desc: null
+  value: null
+LOG_DIR:
+  desc: null
+  value: ../logs
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.12.9
+    framework: torch
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    python_version: 3.7.11
+    start_time: 1641213287
+    t:
+      1:
+      - 1
+      2:
+      - 1
+      4: 3.7.11
+      5: 0.12.9
+      8:
+      - 3
+      - 5
+alpha:
+  desc: null
+  value: 32
+bn_freeze:
+  desc: null
+  value: 1
+dataset:
+  desc: null
+  value: cub
+gpu_id:
+  desc: null
+  value: 0
+l2_norm:
+  desc: null
+  value: 1
+loss:
+  desc: null
+  value: Proxy_Anchor
+lr:
+  desc: null
+  value: 0.0001
+lr_decay_gamma:
+  desc: null
+  value: 0.5
+lr_decay_step:
+  desc: null
+  value: 10
+model:
+  desc: null
+  value: bn_inception
+mrg:
+  desc: null
+  value: 0.1
+nb_epochs:
+  desc: null
+  value: 60
+nb_workers:
+  desc: null
+  value: 0
+optimizer:
+  desc: null
+  value: adamw
+remark:
+  desc: null
+  value: ''
+sz_batch:
+  desc: null
+  value: 180
+sz_embedding:
+  desc: null
+  value: 512
+warm:
+  desc: null
+  value: 1
+weight_decay:
+  desc: null
+  value: 0.0001
