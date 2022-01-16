@@ -16,6 +16,8 @@ from torch.utils.data.dataloader import default_collate
 from tqdm import *
 import wandb
 
+import matplotlib.pyplot as plt
+
 seed = 1
 random.seed(seed)
 np.random.seed(seed)
@@ -47,10 +49,10 @@ parser.add_argument('--epochs', default = 40, type = int,
     dest = 'nb_epochs',
     help = 'Number of training epochs.'
 )
-parser.add_argument('--gpu-id', default = -1, type = int,
+parser.add_argument('--gpu-id', default = 0, type = int,
     help = 'ID of GPU that is used for training.'
 )
-parser.add_argument('--workers', default = 4, type = int,
+parser.add_argument('--workers', default = 0, type = int,
     dest = 'nb_workers',
     help = 'Number of workers for dataloader.'
 )
@@ -272,7 +274,7 @@ for k in range(1):
     # dir1_list = []
     # dir2_list = []
     pro_list = []
-    best_recall = [0]
+    best_recall=[0]
     best_epoch = 0
 
     for epoch in range(0, args.nb_epochs):
@@ -313,7 +315,7 @@ for k in range(1):
 
         for batch_idx, (x, y) in pbar:
             m = model(x.squeeze().cuda())
-            loss, pos, neg, proxy, pos_proxy, pos_cos = criterion(m, y.squeeze().cuda())
+            loss, pos, neg, proxy, pos_proxy, pos_cos, proxy_data = criterion(m, y.squeeze().cuda())
             opt.zero_grad()
             loss.backward()
 
@@ -334,6 +336,10 @@ for k in range(1):
                     epoch, batch_idx + 1, len(dl_tr),
                     100. * batch_idx / len(dl_tr),
                     loss.item(), pos, neg))
+
+        if epoch % 4 == 0:
+            plt.imshow(proxy_data.detach().cpu().numpy())
+            plt.savefig('{}.png'.format(epoch))
 
         losses_list.append(np.mean(losses_per_epoch))
         pos_list.append(np.mean(pos_per_epoch))

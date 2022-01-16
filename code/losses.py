@@ -47,6 +47,7 @@ class Proxy_Anchor(torch.nn.Module):
         cos = F.linear(l2_norm(X), l2_norm(P))  # Calculate cosine similarity
 
         proxy = F.linear(l2_norm(P), l2_norm(P))
+        proxy_data = (proxy * 125) + 125
         proxy_cos = proxy[T]
         pos_cos = torch.where(P_one_hot == 1, cos, torch.zeros_like(cos)).sum(dim=1, keepdim=True).repeat(1, self.nb_classes)
 
@@ -123,7 +124,7 @@ class Proxy_Anchor(torch.nn.Module):
         proxy_term = torch.log(1 + proxy_sum).sum() / self.nb_classes
         loss = pos_term + neg_term
 
-        return loss, pos_term, neg_term, proxy_term, PP_term, CP_term
+        return loss, pos_term, neg_term, proxy_term, PP_term, CP_term, proxy_data
 
 # We use PyTorch Metric Learning library for the following codes.
 # Please refer to "https://github.com/KevinMusgrave/pytorch-metric-learning" for details.
