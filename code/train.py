@@ -39,18 +39,18 @@ parser.add_argument('--embedding-size', default = 512, type = int,
     dest = 'sz_embedding',
     help = 'Size of embedding that is appended to backbone model.'
 )
-parser.add_argument('--batch-size', default = 150, type = int,
+parser.add_argument('--batch-size', default = 180, type = int,
     dest = 'sz_batch',
     help = 'Number of samples per batch.'
 )
-parser.add_argument('--epochs', default = 60, type = int,
+parser.add_argument('--epochs', default = 40, type = int,
     dest = 'nb_epochs',
     help = 'Number of training epochs.'
 )
-parser.add_argument('--gpu-id', default = 0, type = int,
+parser.add_argument('--gpu-id', default = -1, type = int,
     help = 'ID of GPU that is used for training.'
 )
-parser.add_argument('--workers', default = 0, type = int,
+parser.add_argument('--workers', default = 4, type = int,
     dest = 'nb_workers',
     help = 'Number of workers for dataloader.'
 )
@@ -102,7 +102,7 @@ args = parser.parse_args()
 if args.gpu_id != -1:
     torch.cuda.set_device(args.gpu_id)
 
-for k in range(10):
+for k in range(1):
     # Directory for Log
     LOG_DIR = args.LOG_DIR + '/logs_{}/{}_{}_embedding{}_alpha{}_mrg{}_{}_lr{}_batch{}{}'.format(args.dataset, args.model, args.loss, args.sz_embedding, args.alpha,
                                                                                                 args.mrg, args.optimizer, args.lr, args.sz_batch, args.remark)
@@ -227,7 +227,7 @@ for k in range(10):
 
     # DML Losses
     if args.loss == 'Proxy_Anchor':
-        criterion = losses.Proxy_Anchor(nb_classes = nb_classes, sz_embed = args.sz_embedding, mrg = args.mrg, alpha = args.alpha, beta = 2**(k-1)).cuda()
+        criterion = losses.Proxy_Anchor(nb_classes = nb_classes, sz_embed = args.sz_embedding, mrg = args.mrg, alpha = args.alpha).cuda()
     elif args.loss == 'Proxy_NCA':
         criterion = losses.Proxy_NCA(nb_classes = nb_classes, sz_embed = args.sz_embedding).cuda()
     elif args.loss == 'MS':
@@ -265,14 +265,14 @@ for k in range(10):
     losses_list = []
     pos_list = []
     neg_list = []
-    dir_list = []
+    # dir_list = []
     # vl_list = []
     pos_proxy_list = []
     pos_cos_list = []
-    dir1_list = []
-    dir2_list = []
+    # dir1_list = []
+    # dir2_list = []
     pro_list = []
-    best_recall=[0]
+    best_recall = [0]
     best_epoch = 0
 
     for epoch in range(0, args.nb_epochs):
@@ -288,9 +288,9 @@ for k in range(10):
         pos_per_epoch = []
         neg_per_epoch = []
         # vl_per_epoch = []
-        dir_per_epoch = []
-        dir1_per_epoch = []
-        dir2_per_epoch = []
+        # dir_per_epoch = []
+        # dir1_per_epoch = []
+        # dir2_per_epoch = []
         pos_proxy_per_epoch = []
         pos_cos_per_epoch = []
         pro_per_epoch = []
