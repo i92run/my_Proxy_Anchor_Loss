@@ -49,7 +49,7 @@ parser.add_argument('--epochs', default = 40, type = int,
     dest = 'nb_epochs',
     help = 'Number of training epochs.'
 )
-parser.add_argument('--gpu-id', default = 0, type = int,
+parser.add_argument('--gpu-id', default = -1, type = int,
     help = 'ID of GPU that is used for training.'
 )
 parser.add_argument('--workers', default = 0, type = int,
@@ -104,7 +104,7 @@ args = parser.parse_args()
 if args.gpu_id != -1:
     torch.cuda.set_device(args.gpu_id)
 
-for k in range(1):
+for k in range(10):
     # Directory for Log
     LOG_DIR = args.LOG_DIR + '/logs_{}/{}_{}_embedding{}_alpha{}_mrg{}_{}_lr{}_batch{}{}'.format(args.dataset, args.model, args.loss, args.sz_embedding, args.alpha,
                                                                                                 args.mrg, args.optimizer, args.lr, args.sz_batch, args.remark)
@@ -229,7 +229,7 @@ for k in range(1):
 
     # DML Losses
     if args.loss == 'Proxy_Anchor':
-        criterion = losses.Proxy_Anchor(nb_classes = nb_classes, sz_embed = args.sz_embedding, mrg = args.mrg, alpha = args.alpha).cuda()
+        criterion = losses.Proxy_Anchor(nb_classes = nb_classes, sz_embed = args.sz_embedding, mrg = args.mrg, alpha = args.alpha, beta = 2**k).cuda()
     elif args.loss == 'Proxy_NCA':
         criterion = losses.Proxy_NCA(nb_classes = nb_classes, sz_embed = args.sz_embedding).cuda()
     elif args.loss == 'MS':
@@ -315,7 +315,7 @@ for k in range(1):
 
         for batch_idx, (x, y) in pbar:
             m = model(x.squeeze().cuda())
-            loss, pos, neg, proxy, pos_proxy, pos_cos, proxy_data = criterion(m, y.squeeze().cuda())
+            loss, pos, neg, proxy, pos_proxy, pos_cos = criterion(m, y.squeeze().cuda())
             opt.zero_grad()
             loss.backward()
 
@@ -337,9 +337,9 @@ for k in range(1):
                     100. * batch_idx / len(dl_tr),
                     loss.item(), pos, neg))
 
-        if epoch % 4 == 0:
-            plt.imshow(proxy_data.detach().cpu().numpy())
-            plt.savefig('{}.png'.format(epoch))
+        # if epoch % 4 == 0:
+        #     plt.imshow(proxy_data.detach().cpu().numpy())
+        #     plt.savefig('{}.png'.format(epoch))
 
         losses_list.append(np.mean(losses_per_epoch))
         pos_list.append(np.mean(pos_per_epoch))
