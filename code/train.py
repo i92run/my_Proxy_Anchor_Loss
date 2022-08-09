@@ -240,6 +240,8 @@ for k in range(10):
         criterion = losses.TripletLoss().cuda()
     elif args.loss == 'NPair':
         criterion = losses.NPairLoss().cuda()
+    elif args.loss == 'Proxy_Ward':
+        criterion = losses.Proxy_Ward(nb_classes = nb_classes, sz_embed = args.sz_embedding, mrg = args.mrg, alpha = args.alpha, beta = 2**k).cuda()
 
     # Train Parameters
     param_groups = [
@@ -248,6 +250,8 @@ for k in range(10):
         {'params': model.model.embedding.parameters() if args.gpu_id != -1 else model.module.model.embedding.parameters(), 'lr':float(args.lr) * 1},
     ]
     if args.loss == 'Proxy_Anchor':
+        param_groups.append({'params': criterion.proxies, 'lr':float(args.lr) * 100})
+    elif args.loss == 'Proxy_Ward':
         param_groups.append({'params': criterion.proxies, 'lr':float(args.lr) * 100})
 
     # Optimizer Setting
@@ -315,7 +319,8 @@ for k in range(10):
 
         for batch_idx, (x, y) in pbar:
             m = model(x.squeeze().cuda())
-            loss, pos, neg, proxy, pos_proxy, pos_cos = criterion(m, y.squeeze().cuda())
+            # loss, pos, neg, proxy, pos_proxy, pos_cos = criterion(m, y.squeeze().cuda())
+            loss, pos, neg = criterion(m, y.squeeze().cuda())
             opt.zero_grad()
             loss.backward()
 
@@ -326,16 +331,18 @@ for k in range(10):
             losses_per_epoch.append(loss.data.cpu().numpy())
             pos_per_epoch.append(pos.data.cpu().numpy())
             neg_per_epoch.append(neg.data.cpu().numpy())
-            pos_proxy_per_epoch.append(pos_proxy.data.cpu().numpy())
-            pos_cos_per_epoch.append(pos_cos.data.cpu().numpy())
-            pro_per_epoch.append(proxy.data.cpu().numpy())
+            # pos_proxy_per_epoch.append(pos_proxy.data.cpu().numpy())
+            # pos_cos_per_epoch.append(pos_cos.data.cpu().numpy())
+            # pro_per_epoch.append(proxy.data.cpu().numpy())
             opt.step()
 
             pbar.set_description(
                 'Train Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f} pos: {:.6f} neg: {:.6f}'.format(
                     epoch, batch_idx + 1, len(dl_tr),
                     100. * batch_idx / len(dl_tr),
-                    loss.item(), pos, neg))
+                    loss.item(),
+                    pos.item(),
+                    neg.item()))
 
         # if epoch % 4 == 0:
         #     plt.imshow(proxy_data.detach().cpu().numpy())
@@ -344,15 +351,15 @@ for k in range(10):
         losses_list.append(np.mean(losses_per_epoch))
         pos_list.append(np.mean(pos_per_epoch))
         neg_list.append(np.mean(neg_per_epoch))
-        pos_proxy_list.append(np.mean(pos_proxy_per_epoch))
-        pos_cos_list.append(np.mean(pos_cos_per_epoch))
-        pro_list.append(np.mean(pro_per_epoch))
+        # pos_proxy_list.append(np.mean(pos_proxy_per_epoch))
+        # pos_cos_list.append(np.mean(pos_cos_per_epoch))
+        # pro_list.append(np.mean(pro_per_epoch))
         wandb.log({'loss': losses_list[-1]}, step=epoch)
         wandb.log({'pos': pos_list[-1]}, step=epoch)
         wandb.log({'neg': neg_list[-1]}, step=epoch)
-        wandb.log({'pos_proxy': pos_proxy_list[-1]}, step=epoch)
-        wandb.log({'pos_cos': pos_cos_list[-1]}, step=epoch)
-        wandb.log({'proxy': pro_list[-1]}, step=epoch)
+        # wandb.log({'pos_proxy': pos_proxy_list[-1]}, step=epoch)
+        # wandb.log({'pos_cos': pos_cos_list[-1]}, step=epoch)
+        # wandb.log({'proxy': pro_list[-1]}, step=epoch)
         scheduler.step()
 
         if(epoch >= 0):

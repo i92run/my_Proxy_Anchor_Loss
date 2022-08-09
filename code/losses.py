@@ -23,6 +23,17 @@ def l2_norm(input):
     output = _output.view(input_size)
     return output
 
+def l2_norm_3d(input):
+    input_size = input.size()
+    buffer = torch.pow(input, 2)
+    normp = torch.sum(buffer, 1).add_(1e-12)
+    norm = torch.sqrt(normp)
+    norm = norm.view(input_size[0], 1, input_size[2])
+    norm = norm.repeat(1, input_size[1], 1)
+    _output = torch.div(input, norm)
+    output = _output.view(input_size)
+    return output
+
 class Proxy_Anchor(torch.nn.Module):
     def __init__(self, nb_classes, sz_embed, mrg=0.1, alpha=32, beta=1):
         torch.nn.Module.__init__(self)
@@ -91,6 +102,125 @@ class Proxy_Anchor(torch.nn.Module):
         loss = exp_term
 
         return loss, pos_term, neg_term, proxy_term, PP_term, CP_term
+
+
+class Proxy_Ward(torch.nn.Module):
+    def __init__(self, nb_classes, sz_embed, mrg=0.1, alpha=32, beta=1):
+        torch.nn.Module.__init__(self)
+        # Proxy Anchor Initialization
+        self.proxies = torch.nn.Parameter(torch.randn(nb_classes, sz_embed).cuda())
+        nn.init.kaiming_normal_(self.proxies, mode='fan_out')
+        self.eye = torch.eye(nb_classes)
+        self.proxies_y = torch.arange(nb_classes).view(nb_classes, 1).repeat(1, sz_embed)
+
+        self.nb_classes = nb_classes
+        self.sz_embed = sz_embed
+        self.mrg = mrg
+        self.alpha = alpha
+        self.beta = beta
+
+    def forward(self, X, T):
+        P = self.proxies
+        b = len(T)
+
+        P_one_hot = binarize(T=T, nb_classes=self.nb_classes)
+        N_one_hot = 1 - P_one_hot
+
+        with_pos_proxies = torch.nonzero(P_one_hot.sum(dim=0) != 0).squeeze(dim=1)  # The set of positive proxies of data in the batch
+        num_valid_proxies = len(with_pos_proxies)  # The number of positive proxies
+
+        data = l2_norm(X)
+        proxy = l2_norm(P)
+
+        data_bf1 = data.view(b, self.sz_embed, 1)
+        data_bfb = data_bf1.repeat(1, 1, b)
+        data_bfc = data_bf1.repeat(1, 1, self.nb_classes)
+        data_bfb_t = torch.transpose(data_bfb, 0, 2)
+        # data_cfb = torch.transpose(data_bfc, 0, 2)
+
+        y_b1 = T.view(b, 1)
+        y_bf = y_b1.repeat(1, self.sz_embed)
+        y_bc = y_b1.repeat(1, self.nb_classes)
+        y_bf1 = y_bf.view(b, self.sz_embed, 1)
+        y_bc1 = y_bc.view(b, self.nb_classes, 1)
+        y_bfb = y_bf1.repeat(1, 1, b)
+        y_bcb = y_bc1.repeat(1, 1, b)
+        y_bfb_t = torch.transpose(y_bfb, 0, 2)
+        y_bcb_t = torch.transpose(y_bcb, 0, 2)
+
+        # y_bfc = y_bf1.repeat(1, 1, self.nb_classes)
+        # y_cfb = torch.transpose(y_bfc, 0, 2)
+        # proxy_y = self.proxies_y.view(self.nb_classes, self.sz_embed, 1).repeat(1, 1, b)
+
+        y_same = y_bfb - y_bfb_t
+        y_same2 = y_bcb - y_bcb_t
+        y_same_bool = torch.where(y_same == 0, torch.ones_like(y_same), torch.zeros_like(y_same))
+        y_same_bool2 = torch.where(y_same2 == 0, torch.ones_like(y_same2), torch.zeros_like(y_same2))
+        y_same_num = y_same_bool.sum(dim=2, keepdim=True).squeeze()
+        y_same_num2 = y_same_bool2.sum(dim=2, keepdim=True).squeeze()
+        y_same_num_bf1 = y_same_num.view(b, self.sz_embed, 1)
+        y_same_num_bfc = y_same_num_bf1.repeat(1, 1, self.nb_classes)
+
+        # y_same2 = proxy_y - y_cfb
+        # y_same_bool2 = torch.where(y_same2 == 0, torch.ones_like(y_same2), torch.zeros_like(y_same2))
+        # y_same_num2 = y_same_bool2.sum(dim=2, keepdim=True).squeeze()
+
+        data_same = torch.where(y_same == 0, data_bfb_t, torch.zeros_like(data_bfb_t))
+        data_sum = data_same.sum(dim=2, keepdim=True).squeeze()
+
+        # data_same2 = torch.where(y_same2 == 0, data_cfb, torch.zeros_like(data_cfb))
+        # data_sum2 = data_same2.sum(dim=2, keepdim=True).squeeze()
+
+        data_sum_bf1 = data_sum.view(b, self.sz_embed, 1)
+        data_sum_bfc = data_sum_bf1.repeat(1, 1, self.nb_classes)
+
+        proxy_cf1 = proxy.view(self.nb_classes, self.sz_embed, 1)
+        proxy_fc = torch.transpose(proxy, 0, 1)
+        proxy_cfb = proxy_cf1.repeat(1, 1, b)
+        proxy_bfc = torch.transpose(proxy_cfb, 0, 2)
+
+        data_proxy_center = (data_sum_bfc + proxy_bfc) / (y_same_num_bfc + 1)
+        data_proxy_center = l2_norm_3d(data_proxy_center)
+
+        # data_proxy_center2 = (data_sum2 + proxy) / (y_same_num2 + 1)
+        # data_proxy_center2 = l2_norm(data_proxy_center2)
+
+        data_cos = torch.einsum('bf, bfc->bc', data, data_proxy_center)
+        proxy_cos = torch.einsum('fc, bfc->bc', proxy_fc, data_proxy_center)
+
+        data_pos_exp = torch.exp(-32. * (data_cos - 0.5))
+        data_neg_exp = torch.exp(32 * (data_cos + 0.1))
+        proxy_pos_exp = torch.exp(-32. * (proxy_cos - 0.5))
+        proxy_neg_exp = torch.exp(32 * (proxy_cos + 0.1))
+
+        data_pos_bc1 = data_pos_exp.view(b, self.nb_classes, 1)
+        data_pos_bcb = data_pos_bc1.repeat(1, 1, b)
+        data_pos_bcb_t = torch.transpose(data_pos_bcb, 0, 2)
+        data_neg_bc1 = data_neg_exp.view(b, self.nb_classes, 1)
+        data_neg_bcb = data_neg_bc1.repeat(1, 1, b)
+        data_neg_bcb_t = torch.transpose(data_neg_bcb, 0, 2)
+
+        data_pos_same = torch.where(y_same2 == 0, data_pos_bcb_t, torch.zeros_like(data_pos_bcb_t))
+        pos_sum = torch.log(data_pos_same.sum(dim=2, keepdim=True).squeeze() + proxy_pos_exp + 1)
+        pos_avg = pos_sum / y_same_num2
+        data_neg_same = torch.where(y_same2 == 0, data_neg_bcb_t, torch.zeros_like(data_neg_bcb_t))
+        neg_sum = torch.log(data_neg_same.sum(dim=2, keepdim=True).squeeze() + proxy_neg_exp + 1)
+        neg_avg = neg_sum / y_same_num2
+
+        cos = F.linear(l2_norm(X), l2_norm(P))
+        pos_exp = torch.exp(-self.alpha * (cos - self.mrg))
+        neg_exp = torch.exp(self.alpha * (cos + self.mrg))
+
+        my_P_sim_sum = torch.where(P_one_hot == 1, pos_avg, torch.zeros_like(pos_avg)).sum(dim=0)
+        P_sim_sum = torch.where(P_one_hot == 1, pos_exp, torch.zeros_like(pos_exp)).sum(dim=0)
+        N_sim_sum = torch.where(N_one_hot == 1, neg_exp, torch.zeros_like(neg_exp)).sum(dim=0) #/ (num_valid_proxies - 1)
+
+        my_pos_term = my_P_sim_sum.sum() / num_valid_proxies
+        pos_term = torch.log(P_sim_sum + 1).sum() / num_valid_proxies
+        neg_term = torch.log(N_sim_sum + 1).sum() / self.nb_classes
+        loss = my_pos_term + neg_term
+
+        return loss, pos_term, neg_term, my_pos_term
 
 # We use PyTorch Metric Learning library for the following codes.
 # Please refer to "https://github.com/KevinMusgrave/pytorch-metric-learning" for details.
